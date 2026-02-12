@@ -22,6 +22,19 @@ import {
 
 import { faceletsToPattern, patternToFacelets } from './utils';
 
+/*
+
+  state = 9x5 chars (one of URFDLB)
+  "Up face" (9 chars)
+  "Right face" (9 chars)
+  "Front face" (9 chars)
+  "Down face" (9 chars)
+  "Left face" (9 chars)
+  "Back face" (9 chars)
+
+*/
+
+
 const SOLVED_STATE = "UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB";
 
 var twistyPlayer = new TwistyPlayer({
@@ -83,6 +96,23 @@ async function handleGyroEvent(event: GanCubeEvent) {
 
 async function handleMoveEvent(event: GanCubeEvent) {
   if (event.type == "MOVE") {
+    switch(event.move) {
+        case "U": playNote("C4"); break;
+        case "U'": playNote("C4"); break;
+        case "D": playNote("D4"); break;
+        case "D'": playNote("D4"); break;
+        case "L": playNote("E4"); break;
+        case "L'": playNote("E4"); break;
+        case "R": playNote("F4"); break;
+        case "R'": playNote("F4"); break;
+        case "F": playNote("G4"); break;
+        case "F'": playNote("G4"); break;
+        case "B": playNote("A4"); break;
+        case "B'": playNote("A4"); break;
+        default: playNote("A4"); break;
+    }
+
+
     if (timerState == "READY") {
       setTimerState("RUNNING");
     }
@@ -119,11 +149,10 @@ async function handleFaceletsEvent(event: GanCubeEvent) {
 }
 
 function handleCubeEvent(event: GanCubeEvent) {
-  if (event.type != "GYRO")
-    console.log("GanCubeEvent", event);
   if (event.type == "GYRO") {
     handleGyroEvent(event);
   } else if (event.type == "MOVE") {
+    console.log("move", event.move);
     handleMoveEvent(event);
   } else if (event.type == "FACELETS") {
     handleFaceletsEvent(event);
@@ -144,12 +173,16 @@ function handleCubeEvent(event: GanCubeEvent) {
 
 const customMacAddressProvider: MacAddressProvider = async (device, isFallbackCall): Promise<string | null> => {
   if (isFallbackCall) {
-    return prompt('Unable do determine cube MAC address!\nPlease enter MAC address manually:');
+    return "FD:21:DE:23:B5:03";
   } else {
     return typeof device.watchAdvertisements == 'function' ? null :
       prompt('Seems like your browser does not support Web Bluetooth watchAdvertisements() API. Enable following flag in Chrome:\n\nchrome://flags/#enable-experimental-web-platform-features\n\nor enter cube MAC address manually:');
   }
 };
+
+$('#music-mode').on('change', function() {
+    console.log($(this).val());
+});
 
 $('#reset-state').on('click', async () => {
   await conn?.sendCubeCommand({ type: "REQUEST_RESET" });
@@ -165,7 +198,8 @@ $('#connect').on('click', async () => {
     conn.disconnect();
     conn = null;
   } else {
-    conn = await connectGanCube(customMacAddressProvider);
+      //conn = await connectGanCube(customMacAddressProvider);
+    conn = await connectGanCube(() => "FD:21:DE:23:B5:03");
     conn.events$.subscribe(handleCubeEvent);
     await conn.sendCubeCommand({ type: "REQUEST_HARDWARE" });
     await conn.sendCubeCommand({ type: "REQUEST_FACELETS" });
@@ -251,3 +285,44 @@ $(document).on('keydown', (event) => {
 $("#cube").on('touchstart', () => {
   activateTimer();
 });
+
+
+//------------------------------
+
+const audioCtx = new AudioContext();
+const NOTE_DURATION = 2.0;
+
+function frequency(note: string) {
+  switch(note) {
+    case "C4": return 261.63;
+    case "C#4": return 277.18;
+    case "D4": return 293.66;
+    case "D#4": return 311.13;
+    case "E4": return 329.63;
+    case "F4": return 349.23;
+    case "F#4": return 369.99;
+    case "G4": return 392.00;
+    case "G#4": return 415.30;
+    case "A4": return 440.00;
+    case "A#4": return 466.16;
+    case "B4": return 493.88;
+    default: return 100;
+  }
+}
+
+function playNote(note: string) {
+  const f = frequency(note);
+
+  const oscillator = audioCtx.createOscillator();
+  const gainNode = audioCtx.createGain();
+
+  oscillator.frequency.setValueAtTime(f, audioCtx.currentTime);
+  oscillator.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
+
+  gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+  gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + NOTE_DURATION);
+
+  oscillator.start();
+  oscillator.stop(audioCtx.currentTime + NOTE_DURATION);
+}

@@ -24,43 +24,51 @@
       <button id="reset-gyro">Reset Gyro</button>
     </div>
 
-    <div class="info">
+    <select id="music-mode">
+        <option>Chromatic</option>
+        <option>Diatonic</option>
+        <option>Beat box</option>
+        <option>Solver</option>
+    </select>
 
-      <label for="deviceName">Device Name</label>
-      <input id="deviceName" type="text" readonly value="- n/a -">
+    <details>
+        <div class="info">
 
-      <label for="deviceMAC">Device MAC</label>
-      <input id="deviceMAC" type="text" readonly value="- n/a -">
+            <label for="deviceName">Device Name</label>
+            <input id="deviceName" type="text" readonly value="- n/a -">
 
-      <label for="hardwareName">Hardware Name</label>
-      <input id="hardwareName" type="text" readonly value="- n/a -">
+            <label for="deviceMAC">Device MAC</label>
+            <input id="deviceMAC" type="text" readonly value="- n/a -">
 
-      <label for="hardwareVersion">Hardware Version</label>
-      <input id="hardwareVersion" type="text" readonly value="- n/a -">
+            <label for="hardwareName">Hardware Name</label>
+            <input id="hardwareName" type="text" readonly value="- n/a -">
 
-      <label for="softwareVersion">Software Version</label>
-      <input id="softwareVersion" type="text" readonly value="- n/a -">
+            <label for="hardwareVersion">Hardware Version</label>
+            <input id="hardwareVersion" type="text" readonly value="- n/a -">
 
-      <label for="productDate">Product Date</label>
-      <input id="productDate" type="text" readonly value="- n/a -">
+            <label for="softwareVersion">Software Version</label>
+            <input id="softwareVersion" type="text" readonly value="- n/a -">
 
-      <label for="gyroSupported">Gyro Supported</label>
-      <input id="gyroSupported" type="text" readonly value="- n/a -">
+            <label for="productDate">Product Date</label>
+            <input id="productDate" type="text" readonly value="- n/a -">
 
-      <label for="batteryLevel">Battery</label>
-      <input id="batteryLevel" type="text" readonly value="- n/a -">
+            <label for="gyroSupported">Gyro Supported</label>
+            <input id="gyroSupported" type="text" readonly value="- n/a -">
 
-      <label for="skew">Clock Skew</label>
-      <input id="skew" type="text" readonly value="- n/a -">
+            <label for="batteryLevel">Battery</label>
+            <input id="batteryLevel" type="text" readonly value="- n/a -">
 
-      <label for="quaternion">Quaternion</label>
-      <input id="quaternion" type="text" readonly value="- n/a -">
+            <label for="skew">Clock Skew</label>
+            <input id="skew" type="text" readonly value="- n/a -">
 
-      <label for="velocity">Angular Velocity</label>
-      <input id="velocity" type="text" readonly value="- n/a -">
+            <label for="quaternion">Quaternion</label>
+            <input id="quaternion" type="text" readonly value="- n/a -">
 
-    </div>
+            <label for="velocity">Angular Velocity</label>
+            <input id="velocity" type="text" readonly value="- n/a -">
 
+        </div>
+    </details>
     <div id="timer">0:00.000</div>
 
   </div>
