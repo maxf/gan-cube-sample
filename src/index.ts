@@ -124,13 +124,26 @@ const diatonicMap = {
   "B'": "G4"
 }
 
+const scoreTimeline = [];
+
 async function handleMoveEvent(event: GanCubeEvent) {
-  if (event.type == "MOVE") {
-    if (musicMode == "Chromatic") {
+  switch (musicMode) {
+    case "Chromatic":
       playNote(chromaticMap[event.move]);
-    } else {
+      break;
+    case "Diatonic":
       playNote(diatonicMap[event.move]);
-    }
+      break;
+    case "Solve":
+      const score = solvedScore(currentConfig);
+      scoreTimeline.push(score)
+      console.log(scoreTimeline)
+      const f = (score-10)/44*(494-261)+261;
+      console.log(score, f);
+      playFrequency((score-10)/44*(494-261)+261);
+
+    default:
+      break;
   }
 
   if (timerState == "READY") {
@@ -152,8 +165,13 @@ async function handleMoveEvent(event: GanCubeEvent) {
 
 var cubeStateInitialized = false;
 
+let currentConfig = "";
+
 async function handleFaceletsEvent(event: GanCubeEvent) {
-  if (event.type == "FACELETS" && !cubeStateInitialized) {
+  //console.log("handleFaceletsEvent", event.facelets, cubeStateInitialized)
+  currentConfig = event.facelets;
+
+  if (!cubeStateInitialized) {
     if (event.facelets != SOLVED_STATE) {
       var kpattern = faceletsToPattern(event.facelets);
       var solution = await experimentalSolve3x3x3IgnoringCenters(kpattern);
@@ -171,7 +189,6 @@ function handleCubeEvent(event: GanCubeEvent) {
   if (event.type == "GYRO") {
     handleGyroEvent(event);
   } else if (event.type == "MOVE") {
-    console.log("move", event.move);
     handleMoveEvent(event);
   } else if (event.type == "FACELETS") {
     handleFaceletsEvent(event);
@@ -333,7 +350,10 @@ function frequency(note: string) {
 
 function playNote(note: string) {
   const f = frequency(note);
+  playFrequency(f);
+}
 
+function playFrequency(f: number) {
   const oscillator = audioCtx.createOscillator();
   const gainNode = audioCtx.createGain();
 
@@ -346,4 +366,38 @@ function playNote(note: string) {
 
   oscillator.start();
   oscillator.stop(audioCtx.currentTime + NOTE_DURATION);
+}
+
+const solvedScore = function(cubeState: string): number {
+
+/*
+  state = array of 9x5 chars (one of URFDLB)
+  "Up face" (9 chars)
+  "Right face" (9 chars)
+  "Front face" (9 chars)
+  "Down face" (9 chars)
+  "Left face" (9 chars)
+  "Back face" (9 chars)
+
+   The URFDLB chars act similar to colours, but makes it easier to tell when a
+   cube is solved: "UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB"
+*/
+
+  /* for each face we're going to compute the max number of cubies of the same colour */
+  return maxCount(cubeState.substring(0,9)) +
+    maxCount(cubeState.substring(9,18)) +
+    maxCount(cubeState.substring(18,27)) +
+    maxCount(cubeState.substring(27,36)) +
+    maxCount(cubeState.substring(36,45)) +
+    maxCount(cubeState.substring(45,54));
+}
+
+const maxCount = function(str: string): number {
+  const counts = {};
+  let maxCount = 0;
+  for (const char of str) {
+    counts[char] = (counts[char] || 0) + 1;
+    maxCount = Math.max(maxCount, counts[char]);
+  }
+  return maxCount;
 }
