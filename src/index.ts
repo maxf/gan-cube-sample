@@ -94,40 +94,59 @@ async function handleGyroEvent(event: GanCubeEvent) {
   }
 }
 
+const chromaticMap = {
+  "U":  "C4",
+  "U'": "C#4",
+  "D":  "D4",
+  "D'": "D#4",
+  "L":  "E4",
+  "L'": "F4",
+  "R":  "F#4",
+  "R'": "G4",
+  "F":  "G#4",
+  "F'": "A4",
+  "B":  "A#4",
+  "B'": "B4"
+}
+
+const diatonicMap = {
+  "U":  "C4",
+  "U'": "D4",
+  "D":  "E4",
+  "D'": "F4",
+  "L":  "G4",
+  "L'": "A4",
+  "R":  "B4",
+  "R'": "C4",
+  "F":  "D4",
+  "F'": "E4",
+  "B":  "F4",
+  "B'": "G4"
+}
+
 async function handleMoveEvent(event: GanCubeEvent) {
   if (event.type == "MOVE") {
-    switch(event.move) {
-        case "U": playNote("C4"); break;
-        case "U'": playNote("C4"); break;
-        case "D": playNote("D4"); break;
-        case "D'": playNote("D4"); break;
-        case "L": playNote("E4"); break;
-        case "L'": playNote("E4"); break;
-        case "R": playNote("F4"); break;
-        case "R'": playNote("F4"); break;
-        case "F": playNote("G4"); break;
-        case "F'": playNote("G4"); break;
-        case "B": playNote("A4"); break;
-        case "B'": playNote("A4"); break;
-        default: playNote("A4"); break;
+    if (musicMode == "Chromatic") {
+      playNote(chromaticMap[event.move]);
+    } else {
+      playNote(diatonicMap[event.move]);
     }
+  }
 
-
-    if (timerState == "READY") {
-      setTimerState("RUNNING");
-    }
-    twistyPlayer.experimentalAddMove(event.move, { cancel: false });
-    lastMoves.push(event);
-    if (timerState == "RUNNING") {
-      solutionMoves.push(event);
-    }
-    if (lastMoves.length > 256) {
-      lastMoves = lastMoves.slice(-256);
-    }
-    if (lastMoves.length > 10) {
-      var skew = cubeTimestampCalcSkew(lastMoves);
-      $('#skew').val(skew + '%');
-    }
+  if (timerState == "READY") {
+    setTimerState("RUNNING");
+  }
+  twistyPlayer.experimentalAddMove(event.move, { cancel: false });
+  lastMoves.push(event);
+  if (timerState == "RUNNING") {
+    solutionMoves.push(event);
+  }
+  if (lastMoves.length > 256) {
+    lastMoves = lastMoves.slice(-256);
+  }
+  if (lastMoves.length > 10) {
+    var skew = cubeTimestampCalcSkew(lastMoves);
+    $('#skew').val(skew + '%');
   }
 }
 
@@ -180,8 +199,10 @@ const customMacAddressProvider: MacAddressProvider = async (device, isFallbackCa
   }
 };
 
+let musicMode = "Diatonic";
+
 $('#music-mode').on('change', function() {
-    console.log($(this).val());
+    musicMode = $(this).val();
 });
 
 $('#reset-state').on('click', async () => {
