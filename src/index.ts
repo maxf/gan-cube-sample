@@ -23,19 +23,31 @@ import {
 import { faceletsToPattern, patternToFacelets } from './utils';
 
 /*
-
   state = 9x5 chars (one of URFDLB)
-  "Up face" (9 chars)
-  "Right face" (9 chars)
-  "Front face" (9 chars)
-  "Down face" (9 chars)
-  "Left face" (9 chars)
-  "Back face" (9 chars)
-
+  "Up face" (9 chars) - white
+  "Right face" (9 chars) - red
+  "Front face" (9 chars) - green
+  "Down face" (9 chars) - yellow
+  "Left face" (9 chars) - orange
+  "Back face" (9 chars) - blue
 */
 
 
 const SOLVED_STATE = "UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB";
+
+/* Moves */
+// U:  UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB
+//     UUUUUUUUUBBBRRRRRRRRRFFFFFFDDDDDDDDDFFFLLLLLLLLLBBBBBB
+//              ^^^      ^^^               ^^^      ^^^
+//               4        1                 2        3
+
+// U': UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB
+//     UUUUUUUUUFFFRRRRRRLLLFFFFFFDDDDDDDDDBBBLLLLLLRRRBBBBBB
+//              ^^^      ^^^               ^^^      ^^^
+
+//
+
+
 
 var twistyPlayer = new TwistyPlayer({
   puzzle: '3x3x3',
@@ -135,12 +147,16 @@ async function handleMoveEvent(event: GanCubeEvent) {
       playNote(diatonicMap[event.move]);
       break;
     case "Solve":
-      const score = solvedScore(currentConfig);
-      scoreTimeline.push(score)
-      console.log(scoreTimeline)
-      const f = (score-10)/44*(494-261)+261;
-      console.log(score, f);
-      playFrequency((score-10)/44*(494-261)+261);
+      // console.log(event)
+      // const score = solvedScore(currentConfig);
+      // console.log("config", currentConfig)
+      // console.log("score", score)
+      // console.log("event.move", event.move)
+      // scoreTimeline.push(score)
+      // //      console.log(scoreTimeline)
+      // const f = (score-10)/44*(494-261)+261;
+      // console.log(score, f);
+      // playFrequency((score-10)/44*(494-261)+261);
 
     default:
       break;
@@ -168,8 +184,20 @@ var cubeStateInitialized = false;
 let currentConfig = "";
 
 async function handleFaceletsEvent(event: GanCubeEvent) {
-  //console.log("handleFaceletsEvent", event.facelets, cubeStateInitialized)
   currentConfig = event.facelets;
+
+  if (musicMode === "Solve") {
+    const score = solvedScore(currentConfig);
+    console.log("config", currentConfig)
+    console.log("score", score)
+    console.log("event.move", event.move)
+    scoreTimeline.push(score)
+    //      console.log(scoreTimeline)
+    const f = (score-10)/44*(494-261)+261;
+    console.log(score, f);
+    playFrequency((score-10)/44*(494-261)+261);
+  }
+
 
   if (!cubeStateInitialized) {
     if (event.facelets != SOLVED_STATE) {
@@ -216,8 +244,8 @@ const customMacAddressProvider: MacAddressProvider = async (device, isFallbackCa
   }
 };
 
-let musicMode = "Diatonic";
 
+let musicMode = "Solve";
 $('#music-mode').on('change', function() {
     musicMode = $(this).val();
 });
