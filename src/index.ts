@@ -35,19 +35,6 @@ import { faceletsToPattern, patternToFacelets } from './utils';
 
 const SOLVED_STATE = "UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB";
 
-/* Moves */
-// U:  UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB
-//     UUUUUUUUUBBBRRRRRRRRRFFFFFFDDDDDDDDDFFFLLLLLLLLLBBBBBB
-//              ^^^      ^^^               ^^^      ^^^
-//               4        1                 2        3
-
-// U': UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB
-//     UUUUUUUUUFFFRRRRRRLLLFFFFFFDDDDDDDDDBBBLLLLLLRRRBBBBBB
-//              ^^^      ^^^               ^^^      ^^^
-
-//
-
-
 
 var twistyPlayer = new TwistyPlayer({
   puzzle: '3x3x3',
@@ -147,17 +134,16 @@ async function handleMoveEvent(event: GanCubeEvent) {
       playNote(diatonicMap[event.move]);
       break;
     case "Solve":
-      // console.log(event)
-      // const score = solvedScore(currentConfig);
-      // console.log("config", currentConfig)
-      // console.log("score", score)
-      // console.log("event.move", event.move)
-      // scoreTimeline.push(score)
-      // //      console.log(scoreTimeline)
-      // const f = (score-10)/44*(494-261)+261;
-      // console.log(score, f);
-      // playFrequency((score-10)/44*(494-261)+261);
-
+      let score = solvedScore(currentConfig);
+      scoreTimeline.push(score)
+      //      console.log(scoreTimeline)
+      currentConfig = stateUpdate(currentConfig, event.move)
+      score = solvedScore(currentConfig);
+      // TODO: map to a diatonic scale (should sound better)
+      // worth trying: major, minor, persian (Double Harmonic Major ♭5)
+      const f = (score-10)/44*(494-261)+261;
+      playFrequency(f);
+      break;
     default:
       break;
   }
@@ -185,20 +171,6 @@ let currentConfig = "";
 
 async function handleFaceletsEvent(event: GanCubeEvent) {
   currentConfig = event.facelets;
-
-  if (musicMode === "Solve") {
-    const score = solvedScore(currentConfig);
-    console.log("config", currentConfig)
-    console.log("score", score)
-    console.log("event.move", event.move)
-    scoreTimeline.push(score)
-    //      console.log(scoreTimeline)
-    const f = (score-10)/44*(494-261)+261;
-    console.log(score, f);
-    playFrequency((score-10)/44*(494-261)+261);
-  }
-
-
   if (!cubeStateInitialized) {
     if (event.facelets != SOLVED_STATE) {
       var kpattern = faceletsToPattern(event.facelets);
@@ -428,4 +400,129 @@ const maxCount = function(str: string): number {
     maxCount = Math.max(maxCount, counts[char]);
   }
   return maxCount;
+}
+
+/**
+ * Apply a single face move (clockwise, prime, or double) to a 54-character
+ * Kociemba facelet string (face order: U,R,F,D,L,B). Supported moves:
+ * 'U','D','L','R','F','B' and their modifiers: "'", '2' (e.g., "R'", "F2").
+ *
+ * Example:
+ * applyMoveKociemba("UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB", "U")
+ * -> "UUUUUUUUUBBBRRRRRRRRRFFFFFFDDDDDDDDDFFFLLLLLLLLLBBBBBB"
+ */
+function stateUpdate(state: string, move: string) {
+  if (typeof state !== 'string' || state.length !== 54) {
+    throw new Error('State must be a 54-character Kociemba facelet string.');
+  }
+  if (typeof move !== 'string' || move.length === 0) {
+    throw new Error('Move must be a non-empty string like "U", "R\'", "F2".');
+  }
+
+  const face = move[0].toUpperCase();
+  if (!'UDLRFB'.includes(face)) {
+    throw new Error('Move face must be one of: U, D, L, R, F, B.');
+  }
+
+  const suffix = move.length > 1 ? move[1] : '';
+  let turns = 1; // number of clockwise quarter-turns
+  if (suffix === "'") turns = 3;
+  else if (suffix === '2') turns = 2;
+  else if (suffix !== '') throw new Error("Only modifiers allowed are \"'\" and '2'.");
+
+  let out = state;
+  for (let i = 0; i < turns; i++) {
+    out = applyCWOnce(out, face);
+  }
+  return out;
+
+  function applyCWOnce(st, f) {
+    const s = st.split('');
+    const t = s.slice(); // write target here
+
+    const rotateFaceCW = (b) => {
+      const map = [6, 3, 0, 7, 4, 1, 8, 5, 2];
+      for (let i = 0; i < 9; i++) t[b + i] = s[b + map[i]];
+    };
+    const setStrip = (to, from) => {
+      for (let i = 0; i < to.length; i++) t[to[i]] = s[from[i]];
+    };
+
+    switch (f) {
+      case 'U': {
+        rotateFaceCW(0);
+        const rTop = [9, 10, 11];
+        const fTop = [18, 19, 20];
+        const lTop = [36, 37, 38];
+        const bTop = [45, 46, 47];
+        setStrip(fTop, rTop);
+        setStrip(lTop, fTop);
+        setStrip(bTop, lTop);
+        setStrip(rTop, bTop);
+        break;
+      }
+      case 'D': {
+        rotateFaceCW(27);
+        const fBot = [24, 25, 26];
+        const rBot = [15, 16, 17];
+        const bBot = [51, 52, 53];
+        const lBot = [42, 43, 44];
+        setStrip(fBot, lBot);
+        setStrip(rBot, fBot);
+        setStrip(bBot, rBot);
+        setStrip(lBot, bBot);
+        break;
+      }
+      case 'R': {
+        rotateFaceCW(9);
+        const uR = [2, 5, 8];
+        const fR = [20, 23, 26];
+        const dR = [29, 32, 35];
+        const bL = [51, 48, 45]; // reversed to match orientation
+        setStrip(fR, uR);
+        setStrip(dR, fR);
+        setStrip(bL, dR);
+        setStrip(uR, bL);
+        break;
+      }
+      case 'L': {
+        rotateFaceCW(36);
+        const uL = [0, 3, 6];
+        const fL = [18, 21, 24];
+        const dL = [27, 30, 33];
+        const bR = [53, 50, 47]; // reversed to match orientation
+        setStrip(fL, uL);
+        setStrip(dL, fL);
+        setStrip(bR, dL);
+        setStrip(uL, bR);
+        break;
+      }
+      case 'F': {
+        rotateFaceCW(18);
+        const uB = [6, 7, 8];        // U bottom row
+        const rL = [9, 12, 15];      // R left col
+        const dT = [29, 28, 27];     // D top row (reversed)
+        const lR = [44, 41, 38];     // L right col (reversed)
+        setStrip(rL, uB);
+        setStrip(dT, rL);
+        setStrip(lR, dT);
+        setStrip(uB, lR);
+        break;
+      }
+      case 'B': {
+        rotateFaceCW(45);
+        const uT = [2, 1, 0];        // U top row (reversed)
+        const lL = [36, 39, 42];     // L left col
+        const dB = [33, 34, 35];     // D bottom row
+        const rR = [17, 14, 11];     // R right col (reversed)
+        setStrip(lL, uT);
+        setStrip(dB, lL);
+        setStrip(rR, dB);
+        setStrip(uT, rR);
+        break;
+      }
+    }
+
+    return t.join('');
+  }
 }
