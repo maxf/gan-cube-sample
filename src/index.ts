@@ -134,14 +134,27 @@ async function handleMoveEvent(event: GanCubeEvent) {
       playNote(diatonicMap[event.move]);
       break;
     case "Solve":
-      let score = solvedScore(currentConfig);
-      scoreTimeline.push(score)
-      //      console.log(scoreTimeline)
       currentConfig = stateUpdate(currentConfig, event.move)
-      score = solvedScore(currentConfig);
+      const score = solvedScore(currentConfig);
+      console.log(score)
       // TODO: map to a diatonic scale (should sound better)
       // worth trying: major, minor, persian (Double Harmonic Major ♭5)
-      const f = (score-10)/44*(494-261)+261;
+
+      // 14 seems to be the lowest score
+      // 54 is the highest
+
+      // lerp [14 to 54] -> C to C + 40 notes on a scale
+      // 40 / 8 => 5 octaves
+      // 40 / 2 / 8 => 2.5 octaves
+      const scoreScale = Math.round(score / 2);
+      console.log('scoreScale', scoreScale);
+      const note = cMajorScale[scoreScale % 8];
+      const octave = 4 + Math.round(scoreScale / 8);
+
+      console.log('note', note);
+      console.log('octave', octave);
+      const f = frequency(note, octave);
+      console.log('f', f);
       playFrequency(f);
       break;
     default:
@@ -330,26 +343,60 @@ $("#cube").on('touchstart', () => {
 const audioCtx = new AudioContext();
 const NOTE_DURATION = 2.0;
 
-function frequency(note: string) {
+const cMajorScale = [
+  'C', 'D', 'E', 'F', 'G', 'A', 'B',
+];
+
+const cPersianScale = [
+  'C', 'Db', 'E', 'F', 'G', 'Ab', 'B',
+];
+
+function frequency(note: str, octave: int) {
+  const m = (+octave - 4) ** 2;
+  console.log('>>', note, octave, m);
   switch(note) {
-    case "C4": return 261.63;
-    case "C#4": return 277.18;
-    case "D4": return 293.66;
-    case "D#4": return 311.13;
-    case "E4": return 329.63;
-    case "F4": return 349.23;
-    case "F#4": return 369.99;
-    case "G4": return 392.00;
-    case "G#4": return 415.30;
-    case "A4": return 440.00;
-    case "A#4": return 466.16;
-    case "B4": return 493.88;
-    default: return 100;
+    case "C": return 261.63 * m; break;
+    case "C#": return 277.18 * m; break;
+    case "Db": return 277.18 * m; break;
+    case "D": return 293.66 * m; break;
+    case "D#": return 311.13 * m; break;
+    case "Eb": return 311.13 * m; break;
+    case "E": return 329.63 * m; break;
+    case "F": return 349.23 * m; break;
+    case "F#": return 369.99 * m; break;
+    case "Gb": return 369.99 * m; break;
+    case "G": return 392.00 * m; break;
+    case "G#": return 415.30 * m; break;
+    case "Ab": return 415.30 * m; break;
+    case "A": return 440.00 * m; break;
+    case "A#": return 466.16 * m; break;
+    case "Bb": return 466.16 * m; break;
+    case "B": return 493.88 * m; break;
+    default: console.log('invalid note', note); return 440;
   }
 }
+// const frequencies = {
+//   "C4": 261.63,
+//   "C#4": 277.18,
+//   "Db4": 277.18,
+//   "D4": 293.66,
+//   "D#4": 311.13,
+//   "Eb4": 329.63,
+//   "E4": 329.63,
+//   "F4": 349.23,
+//   "F#4": 369.99,
+//   "Gb4": 369.99,
+//   "G4": 392.00,
+//   "G#4": 415.30,
+//   "Ab4": 415.30,
+//   "A4": 440.00,
+//   "A#4": 466.16,
+//   "Bb4": 466.16,
+//   "B4": 493.88
+// }
 
 function playNote(note: string) {
-  const f = frequency(note);
+  const f = frequency[note];
   playFrequency(f);
 }
 
