@@ -351,8 +351,8 @@ const cPersianScale = [
   'C', 'Db', 'E', 'F', 'G', 'Ab', 'B',
 ];
 
-function frequency(note: str, octave: int) {
-  const m = (+octave - 4) ** 2;
+function frequency(note: string, octave: number) {
+  const m = 2 ** (octave - 4);
   console.log('>>', note, octave, m);
   switch(note) {
     case "C": return 261.63 * m; break;
@@ -396,7 +396,12 @@ function frequency(note: str, octave: int) {
 // }
 
 function playNote(note: string) {
-  const f = frequency[note];
+  const match = note.match(/^([A-G][#b]?)(\d+)$/);
+  if (!match) {
+    console.log('invalid note string', note);
+    return;
+  }
+  const f = frequency(match[1], parseInt(match[2], 10));
   playFrequency(f);
 }
 
