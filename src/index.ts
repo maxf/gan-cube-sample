@@ -136,7 +136,6 @@ async function handleMoveEvent(event: GanCubeEvent) {
     case "Solve":
       currentConfig = stateUpdate(currentConfig, event.move)
       const score = solvedScore(currentConfig);
-      console.log(score)
       // TODO: map to a diatonic scale (should sound better)
       // worth trying: major, minor, persian (Double Harmonic Major ♭5)
 
@@ -147,14 +146,9 @@ async function handleMoveEvent(event: GanCubeEvent) {
       // 40 / 8 => 5 octaves
       // 40 / 2 / 8 => 2.5 octaves
       const scoreScale = Math.round(score / 2);
-      console.log('scoreScale', scoreScale);
       const note = cMajorScale[scoreScale % 8];
-      const octave = 4 + Math.round(scoreScale / 8);
-
-      console.log('note', note);
-      console.log('octave', octave);
+      const octave = 3 + Math.floor(scoreScale / 8);
       const f = frequency(note, octave);
-      console.log('f', f);
       playFrequency(f);
       break;
     default:
@@ -353,7 +347,6 @@ const cPersianScale = [
 
 function frequency(note: string, octave: number) {
   const m = 2 ** (octave - 4);
-  console.log('>>', note, octave, m);
   switch(note) {
     case "C": return 261.63 * m; break;
     case "C#": return 277.18 * m; break;
