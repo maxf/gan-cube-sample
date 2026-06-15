@@ -27,9 +27,13 @@
     <select id="music-mode">
         <option>Solve</option>
         <option>Chromatic</option>
-        <option>Diatonic</option>
+        <option selected>Diatonic</option>
         <option>Beat box</option>
     </select>
+
+    <div id="timeline"></div>
+    <button id="reset-timeline">Clear</button>
+
 
     <details>
         <div class="info">
@@ -70,7 +74,6 @@
         </div>
     </details>
     <div id="timer">0:00.000</div>
-
   </div>
   <script type="module" src="/src/index.ts"></script>
 

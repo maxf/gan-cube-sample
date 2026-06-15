@@ -108,7 +108,7 @@ const chromaticMap = {
   "B'": "B4"
 }
 
-const diatonicMap = {
+const diatonicMapCMaj = {
   "U":  "C4",
   "U'": "D4",
   "D":  "E4",
@@ -116,14 +116,73 @@ const diatonicMap = {
   "L":  "G4",
   "L'": "A4",
   "R":  "B4",
-  "R'": "C4",
-  "F":  "D4",
-  "F'": "E4",
-  "B":  "F4",
-  "B'": "G4"
+  "R'": "C5",
+  "F":  "D5",
+  "F'": "E5",
+  "B":  "F5",
+  "B'": "G5"
 }
 
+const diatonicMapCMajPentatonic = {
+  "U":  "C4",
+  "U'": "D4",
+  "D":  "E4",
+  "D'": "G4",
+  "L":  "A4",
+  "L'": "C5",
+  "R":  "D5",
+  "R'": "E5",
+  "F":  "G5",
+  "F'": "A5",
+  "B":  "C6",
+  "B'": "D6"
+}
+
+const cPersianScale = {
+  "U":  "C4",
+  "U'": "C#4",
+  "D":  "E4",
+  "D'": "F4",
+  "L":  "G4",
+  "L'": "G#4",
+  "R":  "C5",
+  "R'": "C#5",
+  "F":  "E5",
+  "F'": "F5",
+  "B":  "G5",
+  "B'": "G#5"
+}
+
+
+//const diatonicMap = diatonicMapCMajPentatonic;
+const diatonicMap = cPersianScale;
+
 const scoreTimeline = [];
+const timelineContainer = document.getElementById('timeline');
+const NUM_BARS = 200;
+const bars = new Array(NUM_BARS);
+
+const initTimeline = function() {
+  const fragment = document.createDocumentFragment();
+  for (let i = 0; i < NUM_BARS; i++) {
+    const bar = document.createElement('div');
+    bar.className = 'bar';
+    fragment.appendChild(bar);
+    bars[i] = bar;
+  }
+  timelineContainer.appendChild(fragment);
+}
+
+initTimeline();
+
+let moveIndex = 0;
+
+const resetTimeline = function() {
+  moveIndex = 0;
+  document.querySelectorAll('.bar').forEach(bar => bar.style.transform = 'scaleY(0)');
+}
+
+document.querySelector('#reset-timeline').addEventListener('click', resetTimeline);
 
 async function handleMoveEvent(event: GanCubeEvent) {
   switch (musicMode) {
@@ -131,25 +190,18 @@ async function handleMoveEvent(event: GanCubeEvent) {
       playNote(chromaticMap[event.move]);
       break;
     case "Diatonic":
-      playNote(diatonicMap[event.move]);
+      const freq = playNote(diatonicMap[event.move]);
+      console.log(event.move, diatonicMap[event.move], freq);
+      if (moveIndex++ == NUM_BARS) resetTimeline();
+      bars[moveIndex].style.transform = `scaleY(${freq/1000})`; // 54 is the max value
       break;
     case "Solve":
       currentConfig = stateUpdate(currentConfig, event.move)
       const score = solvedScore(currentConfig);
+      if (moveIndex++ == NUM_BARS) resetTimeline();
+      bars[moveIndex].style.transform = `scaleY(${(score - 14) / 40})`; // 54 is the max value
 
-      console.log("score", score);
-
-      // TODO: map to a diatonic scale (should sound better)
-      // worth trying: major, minor, persian (Double Harmonic Major ♭5)
-
-      // 14 seems to be the lowest score
-      // 54 is the highest
-
-      // lerp [14 to 54] -> C to C + 40 notes on a scale
-      // 40 / 8 => 5 octaves
-      // 40 / 2 / 8 => 2.5 octaves
       const scoreScale = Math.round(score / 2);
-      console.log(scoreScale%7);
       const note = cMajorScale[scoreScale % 7];
       const octave = 3 + Math.floor(scoreScale / 7);
       const f = frequency(note, octave);
@@ -164,6 +216,7 @@ async function handleMoveEvent(event: GanCubeEvent) {
   }
   twistyPlayer.experimentalAddMove(event.move, { cancel: false });
   lastMoves.push(event);
+
   if (timerState == "RUNNING") {
     solutionMoves.push(event);
   }
@@ -228,7 +281,7 @@ const customMacAddressProvider: MacAddressProvider = async (device, isFallbackCa
 };
 
 
-let musicMode = "Solve";
+let musicMode = "Diatonic";
 $('#music-mode').on('change', function() {
     musicMode = $(this).val();
 });
@@ -342,12 +395,16 @@ const audioCtx = new AudioContext();
 const NOTE_DURATION = 2.0;
 
 const cMajorScale = [
-  'C', 'D', 'E', 'F', 'G', 'A', 'B',
+  'C', 'D', 'E', 'F', 'G', 'A', 'B'
 ];
 
-const cPersianScale = [
-  'C', 'Db', 'E', 'F', 'G', 'Ab', 'B',
+const cMajorPentatonic = [
+  'C', 'D', 'E', 'G', 'A'
 ];
+
+
+//  'C', 'C#', 'E', 'F', 'G', 'G#', 'B'
+
 
 function frequency(note: string, octave: number) {
   const m = 2 ** (octave - 4);
@@ -392,14 +449,15 @@ function frequency(note: string, octave: number) {
 //   "B4": 493.88
 // }
 
-function playNote(note: string) {
+function playNote(note: string): number {
   const match = note.match(/^([A-G][#b]?)(\d+)$/);
   if (!match) {
     console.log('invalid note string', note);
-    return;
+    return 0;
   }
   const f = frequency(match[1], parseInt(match[2], 10));
   playFrequency(f);
+  return f;
 }
 
 function playFrequency(f: number) {

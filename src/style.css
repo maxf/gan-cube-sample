@@ -91,3 +91,16 @@ body {
   font-size: 0.8em;
   margin-top: 0.5em;
 }
+
+#timeline {
+  display: flex;
+  align-items: flex-end;
+  height: 300px;
+}
+.bar {
+  flex: 1;
+  height: 100%;              /* full height; scaleY shrinks it */
+  transform: scaleY(0);      /* start at zero */
+  transform-origin: bottom;  /* grow upward from the baseline */
+  background: steelblue;
+}
