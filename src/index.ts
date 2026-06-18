@@ -185,15 +185,17 @@ const resetTimeline = function() {
 document.querySelector('#reset-timeline').addEventListener('click', resetTimeline);
 
 async function handleMoveEvent(event: GanCubeEvent) {
+  let freq = 440;
   switch (musicMode) {
     case "Chromatic":
-      playNote(chromaticMap[event.move]);
+      freq = playNote(chromaticMap[event.move]);
+      if (moveIndex++ == NUM_BARS) resetTimeline();
+      bars[moveIndex].style.transform = `scaleY(${freq/1000})`;
       break;
     case "Diatonic":
-      const freq = playNote(diatonicMap[event.move]);
-      console.log(event.move, diatonicMap[event.move], freq);
+      freq = playNote(diatonicMap[event.move]);
       if (moveIndex++ == NUM_BARS) resetTimeline();
-      bars[moveIndex].style.transform = `scaleY(${freq/1000})`; // 54 is the max value
+      bars[moveIndex].style.transform = `scaleY(${freq/1000})`;
       break;
     case "Solve":
       currentConfig = stateUpdate(currentConfig, event.move)
@@ -204,8 +206,8 @@ async function handleMoveEvent(event: GanCubeEvent) {
       const scoreScale = Math.round(score / 2);
       const note = cMajorScale[scoreScale % 7];
       const octave = 3 + Math.floor(scoreScale / 7);
-      const f = frequency(note, octave);
-      playFrequency(f);
+      freq = frequency(note, octave);
+      playFrequency(freq);
       break;
     default:
       break;
