@@ -185,32 +185,36 @@ const resetTimeline = function() {
 document.querySelector('#reset-timeline').addEventListener('click', resetTimeline);
 
 async function handleMoveEvent(event: GanCubeEvent) {
-  let freq = 440;
-  switch (musicMode) {
-    case "Chromatic":
-      freq = playNote(chromaticMap[event.move]);
-      if (moveIndex++ == NUM_BARS) resetTimeline();
-      bars[moveIndex].style.transform = `scaleY(${freq/1000})`;
-      break;
-    case "Diatonic":
-      freq = playNote(diatonicMap[event.move]);
-      if (moveIndex++ == NUM_BARS) resetTimeline();
-      bars[moveIndex].style.transform = `scaleY(${freq/1000})`;
-      break;
-    case "Solve":
-      currentConfig = stateUpdate(currentConfig, event.move)
-      const score = solvedScore(currentConfig);
-      if (moveIndex++ == NUM_BARS) resetTimeline();
-      bars[moveIndex].style.transform = `scaleY(${(score - 14) / 40})`; // 54 is the max value
+  if (event.facelets != SOLVED_STATE) {
+    currentConfig = stateUpdate(currentConfig, event.move);
+    console.log(1,currentConfig);
+    var kpattern = faceletsToPattern(currentConfig);
+    console.log(2, kpattern);
+    var solution = await experimentalSolve3x3x3IgnoringCenters(kpattern);
+    console.log('solution', solution);
+  }
+  if (musicMode === "Chromatic") {
+    const freq = playNote(chromaticMap[event.move]);
+    if (moveIndex++ == NUM_BARS) resetTimeline();
+    bars[moveIndex].style.transform = `scaleY(${freq/1000})`;
+  } else if (musicMode === "Diatonic") {
+    const freq = playNote(diatonicMap[event.move]);
+    if (moveIndex++ == NUM_BARS) resetTimeline();
+    bars[moveIndex].style.transform = `scaleY(${freq/1000})`;
+  } else if (musicMode === "Solve") {
+    currentConfig = stateUpdate(currentConfig, event.move)
+    const score = solvedScore(currentConfig);
+    if (moveIndex++ == NUM_BARS) resetTimeline();
+    // 54 is the max value, 14 seems to be the min
+    bars[moveIndex].style.transform = `scaleY(${(score - 14) / 40})`;
 
-      const scoreScale = Math.round(score / 2);
-      const note = cMajorScale[scoreScale % 7];
-      const octave = 3 + Math.floor(scoreScale / 7);
-      freq = frequency(note, octave);
-      playFrequency(freq);
-      break;
-    default:
-      break;
+    const scoreScale = Math.round(score / 2);
+    const note = cMajorScale[scoreScale % 7];
+    const octave = 3 + Math.floor(scoreScale / 7);
+    const freq = frequency(note, octave);
+    playFrequency(freq);
+  } else {
+    console.log("unknown value", musicMode);
   }
 
   if (timerState == "READY") {
