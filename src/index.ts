@@ -185,14 +185,6 @@ const resetTimeline = function() {
 document.querySelector('#reset-timeline').addEventListener('click', resetTimeline);
 
 async function handleMoveEvent(event: GanCubeEvent) {
-  if (event.facelets != SOLVED_STATE) {
-    currentConfig = stateUpdate(currentConfig, event.move);
-    console.log(1,currentConfig);
-    var kpattern = faceletsToPattern(currentConfig);
-    console.log(2, kpattern);
-    var solution = await experimentalSolve3x3x3IgnoringCenters(kpattern);
-    console.log('solution', solution);
-  }
   if (musicMode === "Chromatic") {
     const freq = playNote(chromaticMap[event.move]);
     if (moveIndex++ == NUM_BARS) resetTimeline();
@@ -202,11 +194,20 @@ async function handleMoveEvent(event: GanCubeEvent) {
     if (moveIndex++ == NUM_BARS) resetTimeline();
     bars[moveIndex].style.transform = `scaleY(${freq/1000})`;
   } else if (musicMode === "Solve") {
-    currentConfig = stateUpdate(currentConfig, event.move)
-    const score = solvedScore(currentConfig);
+    currentConfig = stateUpdate(currentConfig, event.move);
+
+    const kpattern = faceletsToPattern(currentConfig);
+    const solution = await experimentalSolve3x3x3IgnoringCenters(kpattern);
+    console.log(solution.experimentalNumChildAlgNodes());
+    console.log(solution.toString());
+    const score = solution.experimentalNumChildAlgNodes();
     if (moveIndex++ == NUM_BARS) resetTimeline();
-    // 54 is the max value, 14 seems to be the min
-    bars[moveIndex].style.transform = `scaleY(${(score - 14) / 40})`;
+    bars[moveIndex].style.transform = `scaleY(${(21-score) / 21})`;
+
+
+    // const score = solvedScore(currentConfig);
+    // if (moveIndex++ == NUM_BARS) resetTimeline();
+    //bars[moveIndex].style.transform = `scaleY(${(score - 14) / 40})`;     // 54 is the max value, 14 seems to be the min
 
     const scoreScale = Math.round(score / 2);
     const note = cMajorScale[scoreScale % 7];
@@ -214,7 +215,7 @@ async function handleMoveEvent(event: GanCubeEvent) {
     const freq = frequency(note, octave);
     playFrequency(freq);
   } else {
-    console.log("unknown value", musicMode);
+    console.error("unknown value", musicMode);
   }
 
   if (timerState == "READY") {
@@ -251,7 +252,7 @@ async function handleFaceletsEvent(event: GanCubeEvent) {
       twistyPlayer.alg = '';
     }
     cubeStateInitialized = true;
-    console.log("Initial cube state is applied successfully", event.facelets);
+    //console.log("Initial cube state is applied successfully", event.facelets);
   }
 }
 
@@ -432,7 +433,7 @@ function frequency(note: string, octave: number) {
     case "A#": return 466.16 * m; break;
     case "Bb": return 466.16 * m; break;
     case "B": return 493.88 * m; break;
-    default: console.log('invalid note', note); return 440;
+    default: console.error('invalid note', note); return 440;
   }
 }
 // const frequencies = {
@@ -458,7 +459,7 @@ function frequency(note: string, octave: number) {
 function playNote(note: string): number {
   const match = note.match(/^([A-G][#b]?)(\d+)$/);
   if (!match) {
-    console.log('invalid note string', note);
+    console.error('invalid note string', note);
     return 0;
   }
   const f = frequency(match[1], parseInt(match[2], 10));
@@ -521,10 +522,12 @@ const maxCount = function(str: string): number {
  * 'U','D','L','R','F','B' and their modifiers: "'", '2' (e.g., "R'", "F2").
  *
  * Example:
- * applyMoveKociemba("UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB", "U")
+ * stateUpdate("UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB", "U")
  * -> "UUUUUUUUUBBBRRRRRRRRRFFFFFFDDDDDDDDDFFFLLLLLLLLLBBBBBB"
  */
 function stateUpdate(state: string, move: string) {
+  //  console.log('stateupdate');
+  //  console.log('in', state, move);
   if (typeof state !== 'string' || state.length !== 54) {
     throw new Error('State must be a 54-character Kociemba facelet string.');
   }
@@ -547,6 +550,7 @@ function stateUpdate(state: string, move: string) {
   for (let i = 0; i < turns; i++) {
     out = applyCWOnce(out, face);
   }
+  //console.log('out', out);
   return out;
 
   function applyCWOnce(st, f) {
