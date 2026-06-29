@@ -592,10 +592,10 @@ function stateUpdate(state: string, move: string) {
         const fR = [20, 23, 26];
         const dR = [29, 32, 35];
         const bL = [51, 48, 45]; // reversed to match orientation
-        setStrip(fR, uR);
-        setStrip(dR, fR);
-        setStrip(bL, dR);
-        setStrip(uR, bL);
+        setStrip(uR, fR);
+        setStrip(fR, dR);
+        setStrip(dR, bL);
+        setStrip(bL, uR);
         break;
       }
       case 'L': {
