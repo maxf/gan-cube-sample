@@ -196,23 +196,25 @@ async function handleMoveEvent(event: GanCubeEvent) {
   } else if (musicMode === "Solve") {
     currentConfig = stateUpdate(currentConfig, event.move);
 
+
     const kpattern = faceletsToPattern(currentConfig);
     const solution = await experimentalSolve3x3x3IgnoringCenters(kpattern);
-    console.log(solution.experimentalNumChildAlgNodes());
-    console.log(solution.toString());
     const score = solution.experimentalNumChildAlgNodes();
+    const normalisedScore = (21 - score) / 21; // 21 -> 0 to 0 -> 1
     if (moveIndex++ == NUM_BARS) resetTimeline();
-    bars[moveIndex].style.transform = `scaleY(${(21-score) / 21})`;
+    bars[moveIndex].style.transform = `scaleY(${normalisedScore})`;
 
-
-    // const score = solvedScore(currentConfig);
-    // if (moveIndex++ == NUM_BARS) resetTimeline();
-    //bars[moveIndex].style.transform = `scaleY(${(score - 14) / 40})`;     // 54 is the max value, 14 seems to be the min
-
-    const scoreScale = Math.round(score / 2);
+    /*
+    const score = solvedScore(currentConfig);
+    if (moveIndex++ == NUM_BARS) resetTimeline();
+    const normalisedScore = (score - 14) / 40; // 14 -> 54 to 0 -> 1
+    bars[moveIndex].style.transform = `scaleY(${normalisedScore})`;
+     */
+    const scoreScale = Math.round(normalisedScore * 7); // map 0->1 to 7 notes
     const note = cMajorScale[scoreScale % 7];
-    const octave = 3 + Math.floor(scoreScale / 7);
+    const octave = 4 + Math.floor(scoreScale / 7);
     const freq = frequency(note, octave);
+    console.log(score, normalisedScore, scoreScale, note, octave, freq);
     playFrequency(freq);
   } else {
     console.error("unknown value", musicMode);
