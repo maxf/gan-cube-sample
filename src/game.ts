@@ -1,4 +1,3 @@
-
 import './style.css'
 
 import $ from 'jquery';
@@ -54,7 +53,7 @@ var twistyVantage: any;
 const HOME_ORIENTATION = new THREE.Quaternion().setFromEuler(new THREE.Euler(15 * Math.PI / 180, -20 * Math.PI / 180, 0));
 var cubeQuaternion: THREE.Quaternion = new THREE.Quaternion().setFromEuler(new THREE.Euler(30 * Math.PI / 180, -30 * Math.PI / 180, 0));
 
-async function amimateCubeOrientation() {
+async function amimateCubeOrientation(time) {
   if (!twistyScene || !twistyVantage) {
     var vantageList = await twistyPlayer.experimentalCurrentVantages();
     twistyVantage = [...vantageList][0];
@@ -143,15 +142,9 @@ async function handleMoveEvent(event: GanCubeEvent) {
     console.error("unknown value", musicMode);
   }
 
-  if (timerState == "READY") {
-    setTimerState("RUNNING");
-  }
   twistyPlayer.experimentalAddMove(event.move, { cancel: false });
   lastMoves.push(event);
 
-  if (timerState == "RUNNING") {
-    solutionMoves.push(event);
-  }
   if (lastMoves.length > 256) {
     lastMoves = lastMoves.slice(-256);
   }
@@ -234,80 +227,12 @@ $('#connect').on('click', async () => {
   }
 });
 
-var timerState: "IDLE" | "READY" | "RUNNING" | "STOPPED" = "IDLE";
-
-function setTimerState(state: typeof timerState) {
-  timerState = state;
-  switch (state) {
-    case "IDLE":
-      stopLocalTimer();
-      $('#timer').hide();
-      break;
-    case 'READY':
-      setTimerValue(0);
-      $('#timer').show();
-      $('#timer').css('color', '#0f0');
-      break;
-    case 'RUNNING':
-      solutionMoves = [];
-      startLocalTimer();
-      $('#timer').css('color', '#999');
-      break;
-    case 'STOPPED':
-      stopLocalTimer();
-      $('#timer').css('color', '#fff');
-      var fittedMoves = cubeTimestampLinearFit(solutionMoves);
-      var lastMove = fittedMoves.slice(-1).pop();
-      setTimerValue(lastMove ? lastMove.cubeTimestamp! : 0);
-      break;
-  }
-}
 
 twistyPlayer.experimentalModel.currentPattern.addFreshListener(async (kpattern) => {
   var facelets = patternToFacelets(kpattern);
   if (facelets == SOLVED_STATE) {
-    if (timerState == "RUNNING") {
-      setTimerState("STOPPED");
-    }
     twistyPlayer.alg = '';
   }
-});
-
-function setTimerValue(timestamp: number) {
-  let t = makeTimeFromTimestamp(timestamp);
-  $('#timer').html(`${t.minutes}:${t.seconds.toString(10).padStart(2, '0')}.${t.milliseconds.toString(10).padStart(3, '0')}`);
-}
-
-var localTimer: Subscription | null = null;
-function startLocalTimer() {
-  var startTime = now();
-  localTimer = interval(30).subscribe(() => {
-    setTimerValue(now() - startTime);
-  });
-}
-
-function stopLocalTimer() {
-  localTimer?.unsubscribe();
-  localTimer = null;
-}
-
-function activateTimer() {
-  if (timerState == "IDLE" && conn) {
-    setTimerState("READY");
-  } else {
-    setTimerState("IDLE");
-  }
-}
-
-$(document).on('keydown', (event) => {
-  if (event.which == 32) {
-    event.preventDefault();
-    activateTimer();
-  }
-});
-
-$("#cube").on('touchstart', () => {
-  activateTimer();
 });
 
 
