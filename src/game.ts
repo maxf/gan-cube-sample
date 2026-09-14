@@ -68,21 +68,6 @@ requestAnimationFrame(amimateCubeOrientation);
 
 var basis: THREE.Quaternion | null;
 
-async function handleGyroEvent(event: GanCubeEvent) {
-  if (event.type == "GYRO") {
-    let { x: qx, y: qy, z: qz, w: qw } = event.quaternion;
-    let quat = new THREE.Quaternion(qx, qz, -qy, qw).normalize();
-    if (!basis) {
-      basis = quat.clone().conjugate();
-    }
-    cubeQuaternion.copy(quat.premultiply(basis).premultiply(HOME_ORIENTATION));
-    $('#quaternion').val(`x: ${qx.toFixed(3)}, y: ${qy.toFixed(3)}, z: ${qz.toFixed(3)}, w: ${qw.toFixed(3)}`);
-    if (event.velocity) {
-      let { x: vx, y: vy, z: vz } = event.velocity;
-      $('#velocity').val(`x: ${vx}, y: ${vy}, z: ${vz}`);
-    }
-  }
-}
 
 const chromaticMap = {
   "U":  "C4",
@@ -197,9 +182,7 @@ async function handleFaceletsEvent(event: GanCubeEvent) {
 }
 
 function handleCubeEvent(event: GanCubeEvent) {
-  if (event.type == "GYRO") {
-    handleGyroEvent(event);
-  } else if (event.type == "MOVE") {
+  if (event.type == "MOVE") {
     handleMoveEvent(event);
   } else if (event.type == "FACELETS") {
     handleFaceletsEvent(event);
@@ -208,7 +191,6 @@ function handleCubeEvent(event: GanCubeEvent) {
     $('#hardwareVersion').val(event.hardwareVersion || '- n/a -');
     $('#softwareVersion').val(event.softwareVersion || '- n/a -');
     $('#productDate').val(event.productDate || '- n/a -');
-    $('#gyroSupported').val(event.gyroSupported ? "YES" : "NO");
   } else if (event.type == "BATTERY") {
     $('#batteryLevel').val(event.batteryLevel + '%');
   } else if (event.type == "DISCONNECT") {
@@ -233,10 +215,6 @@ let musicMode = "Diatonic";
 $('#reset-state').on('click', async () => {
   await conn?.sendCubeCommand({ type: "REQUEST_RESET" });
   twistyPlayer.alg = '';
-});
-
-$('#reset-gyro').on('click', async () => {
-  basis = null;
 });
 
 $('#connect').on('click', async () => {
