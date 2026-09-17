@@ -53,7 +53,31 @@ var twistyVantage: any;
 const HOME_ORIENTATION = new THREE.Quaternion().setFromEuler(new THREE.Euler(15 * Math.PI / 180, -20 * Math.PI / 180, 0));
 var cubeQuaternion: THREE.Quaternion = new THREE.Quaternion().setFromEuler(new THREE.Euler(30 * Math.PI / 180, -30 * Math.PI / 180, 0));
 
-async function amimateCubeOrientation(time) {
+const animCircle = document.getElementById('anim-circle') as SVGCircleElement | null;
+const CIRCLE_PERIOD_MS = 5000; // full left-to-right traversal in milliseconds
+
+
+const moveCircleLerp = {
+  'circle-u': 0,
+  'circle-up': 0,
+  'circle-dp': 0,
+  'circle-l': 0,
+  'circle-lp': 0,
+  'circle-r': 0,
+  'circle-rp': 0,
+  'circle-b': 0,
+  'circle-bp': 0,
+  'circle-f': 0,
+  'circle-fp': 0
+};
+
+document.querySelector('#butt').addEventListener('click', event => {
+  moveCircleLerp['circle-u'] = 1;
+});
+
+
+
+async function amimateCubeOrientation(time: DOMHighResTimeStamp) {
   if (!twistyScene || !twistyVantage) {
     var vantageList = await twistyPlayer.experimentalCurrentVantages();
     twistyVantage = [...vantageList][0];
@@ -61,6 +85,28 @@ async function amimateCubeOrientation(time) {
   }
   twistyScene.quaternion.slerp(cubeQuaternion, 0.25);
   twistyVantage.render();
+
+  // Animate circle across SVG width
+  if (animCircle) {
+    const svgEl = animCircle.ownerSVGElement!;
+    const svgWidth = svgEl.clientWidth || svgEl.getBoundingClientRect().width || 800;
+    const progress = (time % CIRCLE_PERIOD_MS) / CIRCLE_PERIOD_MS; // 0..1
+    animCircle.setAttribute('cx', String(progress * svgWidth));
+  }
+
+  // animate the bubbles
+  Object.keys(moveCircleLerp).forEach(key => {
+    if (moveCircleLerp[key] > 0) {
+      const newL = moveCircleLerp[key];
+      moveCircleLerp[key] = newL - 0.01;
+      const circle = document.querySelector(`#${key}`);
+      circle.style = `fill: rgb(${255*Math.pow(newL,4)}, 0, 0)`;
+      circle.setAttribute('r', 10 + Math.pow(newL,4) * 10);
+    }
+  });
+
+
+
   requestAnimationFrame(amimateCubeOrientation);
 }
 requestAnimationFrame(amimateCubeOrientation);
@@ -132,8 +178,11 @@ const cPersianScale = {
 //const diatonicMap = diatonicMapCMajPentatonic;
 const diatonicMap = cPersianScale;
 
-
 async function handleMoveEvent(event: GanCubeEvent) {
+  const move:string = event.move[0].toLowerCase();
+  const dir:string = (event.move.length === 2 && event.move[1] === '\'') ? 'p' : '';
+  moveCircleLerp[`circle-${move}${dir}`] = 1;
+
   if (musicMode === "Chromatic") {
     const freq = playNote(chromaticMap[event.move]);
   } else if (musicMode === "Diatonic") {

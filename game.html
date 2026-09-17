@@ -10,14 +10,27 @@
 <body>
 
   <div id="app">
-
     <div id="cube"></div>
-
     <div class="controls">
       <button id="connect">Connect</button>
       <button id="reset-state">Reset State</button>
     </div>
-
+    <svg id="canvas" width="100%" height="300" style="background: #aae">
+      <circle id="anim-circle" cx="0" cy="150" r="20" fill="#ff6644" />
+      <circle class="note" id="circle-u"  cx="10" cy="10" r="10" style="fill: #000" />
+      <circle class="note" id="circle-up" cx="10" cy="30" r="10" style="fill: #000" />
+      <circle class="note" id="circle-d"  cx="10" cy="50" r="10" style="fill: #000" />
+      <circle class="note" id="circle-dp" cx="10" cy="70" r="10" style="fill: #000" />
+      <circle class="note" id="circle-l"  cx="10" cy="90" r="10" style="fill: #000" />
+      <circle class="note" id="circle-lp" cx="10" cy="110" r="10" style="fill: #000" />
+      <circle class="note" id="circle-r"  cx="10" cy="130" r="10" style="fill: #000" />
+      <circle class="note" id="circle-rp" cx="10" cy="150" r="10" style="fill: #000" />
+      <circle class="note" id="circle-b"  cx="10" cy="170" r="10" style="fill: #000" />
+      <circle class="note" id="circle-bp" cx="10" cy="190" r="10" style="fill: #000" />
+      <circle class="note" id="circle-f"  cx="10" cy="210" r="10" style="fill: #000" />
+      <circle class="note" id="circle-fp" cx="10" cy="230" r="10" style="fill: #000" />
+    </svg>
+    <button id="butt">button</button>
     <details>
         <div class="info">
 
