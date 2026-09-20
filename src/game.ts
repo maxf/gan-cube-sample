@@ -71,13 +71,25 @@ const moveCircleLerp = {
   'circle-fp': 0
 };
 
-document.querySelector('#butt').addEventListener('click', event => {
-  moveCircleLerp['circle-u'] = 1;
-});
 
+const tune = [ // TODO: set a scale and the notes are the indices in the scale.
+  // Won't support sharps and flats
+  { time: 3000, note: 1 },
+  { time: 4000, note: 2 },
+  { time: 5000, note: 3 },
+  { time: 6000, note: 0 },
+  { time: 7000, note: 4 },
+  { time: 8000, note: 6 },
+  { time: 9000, note: 4 },
+  { time: 10000, note: 5 },
+];
 
+document.querySelectorAll('.note-button').forEach(button => button.addEventListener('click', event => {
+  const target = event.target.getAttribute('data-target');
+  moveCircleLerp[target] = 1;
+}));
 
-async function amimateCubeOrientation(time: DOMHighResTimeStamp) {
+async function animate(time: DOMHighResTimeStamp) {
   if (!twistyScene || !twistyVantage) {
     var vantageList = await twistyPlayer.experimentalCurrentVantages();
     twistyVantage = [...vantageList][0];
@@ -86,30 +98,55 @@ async function amimateCubeOrientation(time: DOMHighResTimeStamp) {
   twistyScene.quaternion.slerp(cubeQuaternion, 0.25);
   twistyVantage.render();
 
-  // Animate circle across SVG width
-  if (animCircle) {
-    const svgEl = animCircle.ownerSVGElement!;
-    const svgWidth = svgEl.clientWidth || svgEl.getBoundingClientRect().width || 800;
-    const progress = (time % CIRCLE_PERIOD_MS) / CIRCLE_PERIOD_MS; // 0..1
-    animCircle.setAttribute('cx', String(progress * svgWidth));
-  }
+  // // Animate circle across SVG width
+  // if (animCircle) {
+  //   const svgEl = animCircle.ownerSVGElement!;
+  //   const svgWidth = svgEl.clientWidth || svgEl.getBoundingClientRect().width || 800;
+  //   const progress = (time % CIRCLE_PERIOD_MS) / CIRCLE_PERIOD_MS; // 0..1
+  //   animCircle.setAttribute('cx', String(progress * svgWidth));
+  // }
+
+  tune.forEach(note => {
+    //console.log(time, note.time);
+    if (Math.abs(note.time - time) < 100) {
+      note.time = -10; // maek note has played so it only starts once
+      // now we need to create the moving note
+      const height = note.note * 20 + 10;
+      note.ball = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      note.ball.setAttribute('x', 400);
+      note.ball.setAttribute('y', height);
+      note.ball.setAttribute('style', 'font-size: 20, fill: blue');
+      note.ball.appendChild(document.createTextNode('X'));
+      document.getElementById('notes').appendChild(note.ball);
+    }
+  });
+
+  // move the existing notes
+  document.querySelectorAll('#notes text').forEach(noteEl => {
+    const x = noteEl.getAttribute('x');
+
+    if (x < -10) {
+      noteEl.remove();
+    } else {
+      noteEl.setAttribute('x', x-1);
+    }
+  });
+
 
   // animate the bubbles
   Object.keys(moveCircleLerp).forEach(key => {
     if (moveCircleLerp[key] > 0) {
       const newL = moveCircleLerp[key];
-      moveCircleLerp[key] = newL - 0.01;
+      moveCircleLerp[key] = newL - 0.02;
       const circle = document.querySelector(`#${key}`);
       circle.style = `fill: rgb(${255*Math.pow(newL,4)}, 0, 0)`;
       circle.setAttribute('r', 10 + Math.pow(newL,4) * 10);
     }
   });
 
-
-
-  requestAnimationFrame(amimateCubeOrientation);
+  requestAnimationFrame(animate);
 }
-requestAnimationFrame(amimateCubeOrientation);
+requestAnimationFrame(animate);
 
 var basis: THREE.Quaternion | null;
 
@@ -303,6 +340,7 @@ const cMajorPentatonic = [
 
 
 function frequency(note: string, octave: number) {
+  console.log('fr', note, octave);
   const m = 2 ** (octave - 4);
   switch(note) {
     case "C": return 261.63 * m; break;
